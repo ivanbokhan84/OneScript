@@ -9,6 +9,10 @@
 </div>
 <br/>
 
+<p align="center"><a href="https://ivanbokhan84.github.io/OneScript/"><img src=".github/fork-cover.png" alt="OneScript preprocessor fix: tests and measurements" width="100%" /></a></p>
+
+Project page with the test and measurement charts: **[ivanbokhan84.github.io/OneScript](https://ivanbokhan84.github.io/OneScript/)**.
+
 OneScript is an independent cross-platform virtual machine that runs scripts written in the 1C:Enterprise language, without the 1C:Enterprise platform. Its `oscript -check` is also a handy syntax check for 1C modules. This fork keeps everything OneScript 2.2.0 does and fixes one preprocessor bug that shows up exactly there: code in an inactive `#Если` branch that contains a `#` in a string or a comment.
 
 Maintained by **Ivan Bokhan**, on top of OneScript 2.2.0 by Andrei Ovsiankin (EvilBeaver) and the OneScript contributors — see [Credits](#credits).
