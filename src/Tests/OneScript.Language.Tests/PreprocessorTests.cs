@@ -676,6 +676,240 @@ namespace OneScript.Language.Tests
             Assert.Equal(Token.EndOfText, lexem.Token);
         }
 
+        [Theory]
+        [InlineData("\r\n")]
+        [InlineData("\n")]
+        public void PreprocessingLexer_HashSignInsideStringOfExcludedBranch(string newLine)
+        {
+            var pp = new PreprocessingLexer();
+
+            var code = JoinLines(newLine,
+                "#Если Клиент Тогда",
+                "А = \"цвет #000000\";",
+                "#КонецЕсли",
+                "Л");
+
+            Assert.Equal("Л", GetPreprocessedContent(pp, code));
+        }
+
+        [Theory]
+        [InlineData("\r\n")]
+        [InlineData("\n")]
+        public void PreprocessingLexer_DirectiveNamesInsideStringsOfExcludedBranch(string newLine)
+        {
+            var pp = new PreprocessingLexer();
+
+            var code = JoinLines(newLine,
+                "#Если Клиент Тогда",
+                "А = \"#КонецЕсли\";",
+                "Б = \"#Иначе\";",
+                "В = \"#ИначеЕсли Да Тогда\";",
+                "Г = \"#Если Да Тогда\";",
+                "Д = \"текст \"\"#КонецЕсли\"\" в кавычках\";",
+                "#Иначе",
+                "Л",
+                "#КонецЕсли",
+                "М");
+
+            Assert.Equal("ЛМ", GetPreprocessedContent(pp, code));
+        }
+
+        [Theory]
+        [InlineData("\r\n")]
+        [InlineData("\n")]
+        public void PreprocessingLexer_HashSignInsideMultilineStringOfExcludedBranch(string newLine)
+        {
+            var pp = new PreprocessingLexer();
+
+            var code = JoinLines(newLine,
+                "#Если Клиент Тогда",
+                "А = \"первая строка",
+                "|#КонецЕсли",
+                "\t|#Иначе",
+                "|цвет #000000\";",
+                "#КонецЕсли",
+                "Л");
+
+            Assert.Equal("Л", GetPreprocessedContent(pp, code));
+        }
+
+        [Theory]
+        [InlineData("\r\n")]
+        [InlineData("\n")]
+        public void PreprocessingLexer_HashSignInsideCommentsOfExcludedBranch(string newLine)
+        {
+            var pp = new PreprocessingLexer();
+
+            var code = JoinLines(newLine,
+                "#Если Клиент Тогда",
+                "// #КонецЕсли",
+                "А = 1; // #Иначе",
+                "\t// #000000",
+                "#КонецЕсли",
+                "Л");
+
+            Assert.Equal("Л", GetPreprocessedContent(pp, code));
+        }
+
+        [Theory]
+        [InlineData("\r\n")]
+        [InlineData("\n")]
+        public void PreprocessingLexer_IndentedDirectivesAfterHashSignInString(string newLine)
+        {
+            var pp = new PreprocessingLexer();
+
+            var code = JoinLines(newLine,
+                "#Если Клиент Тогда",
+                "А = \"#000000\";",
+                " \t #Иначе",
+                "Л",
+                "\t#КонецЕсли",
+                "М");
+
+            Assert.Equal("ЛМ", GetPreprocessedContent(pp, code));
+        }
+
+        [Theory]
+        [InlineData("\r\n")]
+        [InlineData("\n")]
+        public void PreprocessingLexer_HashSignInStringsOfNestedExcludedBlocks(string newLine)
+        {
+            var pp = new PreprocessingLexer();
+
+            var code = JoinLines(newLine,
+                "#Если Клиент Тогда",
+                "\t#Если Сервер Тогда",
+                "\t\tА = \"#КонецЕсли\";",
+                "\t#ИначеЕсли ВебКлиент Тогда",
+                "\t\tБ = \"#Иначе\";",
+                "\t#Иначе",
+                "\t\tВ = \"#000000\";",
+                "\t#КонецЕсли",
+                "\tГ = \"#КонецЕсли\";",
+                "#ИначеЕсли ТолстыйКлиент Тогда",
+                "\tД = \"#Иначе\";",
+                "#Иначе",
+                "Л",
+                "#КонецЕсли",
+                "М");
+
+            Assert.Equal("ЛМ", GetPreprocessedContent(pp, code));
+        }
+
+        [Theory]
+        [InlineData("\r\n")]
+        [InlineData("\n")]
+        public void PreprocessingLexer_HashSignInStringsAfterSolvedBranch(string newLine)
+        {
+            var pp = new PreprocessingLexer();
+            pp.Define("Сервер");
+
+            var code = JoinLines(newLine,
+                "#Если Сервер Тогда",
+                "Л",
+                "#ИначеЕсли Клиент Тогда",
+                "А = \"#КонецЕсли\";",
+                "#Иначе",
+                "Б = \"#000000\";",
+                "#КонецЕсли",
+                "М");
+
+            Assert.Equal("ЛМ", GetPreprocessedContent(pp, code));
+        }
+
+        [Theory]
+        [InlineData("\r\n")]
+        [InlineData("\n")]
+        public void PreprocessingLexer_RegionDirectiveLineBeforeDirectiveOfExcludedBranch(string newLine)
+        {
+            var pp = new PreprocessingLexer();
+
+            var code = JoinLines(newLine,
+                "#Если Клиент Тогда",
+                "#Область Область1",
+                "А = 1;",
+                "#КонецОбласти",
+                "#КонецЕсли",
+                "Л");
+
+            Assert.Equal("Л", GetPreprocessedContent(pp, code));
+        }
+
+        [Theory]
+        [InlineData("А = \"#КонецЕсли\";", "\r\n")]
+        [InlineData("А = \"#КонецЕсли\";", "\n")]
+        [InlineData("// #КонецЕсли", "\r\n")]
+        [InlineData("// #КонецЕсли", "\n")]
+        [InlineData("А = 1; #КонецЕсли", "\r\n")]
+        [InlineData("А = 1; #КонецЕсли", "\n")]
+        [InlineData("А = \"\n|#КонецЕсли\";", "\r\n")]
+        [InlineData("А = \"\n|#КонецЕсли\";", "\n")]
+        public void PreprocessingLexer_DirectiveTextNotOnLineStartDoesNotCloseExcludedBlock(string body, string newLine)
+        {
+            var errors = new ListErrorSink();
+            var pp = new PreprocessingLexer(errors);
+
+            var code = JoinLines(newLine,
+                "#Если Клиент Тогда",
+                body.Replace("\n", newLine));
+
+            pp.Code = code;
+            ReadToEnd(pp);
+
+            Assert.Contains(errors.Errors, e => e.ErrorId == "DirectiveExpected");
+        }
+
+        [Theory]
+        [InlineData("\r\n")]
+        [InlineData("\n")]
+        public void PreprocessingLexer_InvalidDirectiveOnLineStartOfExcludedBranch(string newLine)
+        {
+            var pp = new PreprocessingLexer();
+
+            var code = JoinLines(newLine,
+                "#Если Клиент Тогда",
+                "\t#000000",
+                "#КонецЕсли",
+                "Л");
+
+            pp.Code = code;
+            Assert.Throws<SyntaxErrorException>(() => ReadToEnd(pp));
+        }
+
+        [Theory]
+        [InlineData("\r\n")]
+        [InlineData("\n")]
+        public void PreprocessingLexer_DirectiveNotOnLineStartOfActiveBranch(string newLine)
+        {
+            var pp = new PreprocessingLexer();
+            pp.Define("Сервер");
+
+            var code = JoinLines(newLine,
+                "#Если Сервер Тогда",
+                "А = \"#000000\"; #КонецЕсли",
+                "Л");
+
+            pp.Code = code;
+            Assert.Throws<SyntaxErrorException>(() => ReadToEnd(pp));
+        }
+
+        private static string JoinLines(string newLine, params string[] lines)
+        {
+            return string.Join(newLine, lines);
+        }
+
+        private static void ReadToEnd(ILexer pp)
+        {
+            const int maxLexemCount = 1000;
+            for (int i = 0; i < maxLexemCount; i++)
+            {
+                if (pp.NextLexem().Type == LexemType.EndOfText)
+                    return;
+            }
+
+            Assert.True(false, "Лексер не дошел до конца текста");
+        }
+
         private string GetPreprocessedContent(ILexer pp, string code)
         {
             pp.Iterator = SourceCodeHelper.FromString(code).CreateIterator();
@@ -746,7 +980,16 @@ namespace OneScript.Language.Tests
         
         private class PreprocessingLexer : DirectiveHandlingLexer
         {
-            private ConditionalDirectiveHandler _handler = new ConditionalDirectiveHandler(new ThrowingErrorSink());
+            private readonly ConditionalDirectiveHandler _handler;
+
+            public PreprocessingLexer() : this(new ThrowingErrorSink())
+            {
+            }
+
+            public PreprocessingLexer(IErrorSink errorSink)
+            {
+                _handler = new ConditionalDirectiveHandler(errorSink);
+            }
 
             protected override IDirectiveHandler GetHandler() => _handler;
 

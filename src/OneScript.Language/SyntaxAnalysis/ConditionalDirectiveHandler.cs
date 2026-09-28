@@ -368,20 +368,28 @@ namespace OneScript.Language.SyntaxAnalysis
 
         private bool FindHashSign()
         {
+            // Директива - только первый непробельный символ строки. Символ # внутри строки,
+            // комментария или после кода директивой не является.
+            // Iterator.OnNewLine при посимвольном чтении не обновляется, поэтому начало строки
+            // определяется по номеру строки. Пробелы, включая текущий символ, пропускает SkipSpaces:
+            // он отмечает переход на новую строку, который проверяет лексер директивы.
             var iterator = _lexer.Iterator;
+            var lineStart = iterator.CurrentSymbol == '\n';
+            var contentLine = iterator.CurrentLine;
 
-            while (true)
+            while (iterator.SkipSpaces())
             {
-                if (iterator.CurrentSymbol == SpecialChars.Preprocessor)
-                {
-                    if(iterator.OnNewLine)
-                        return true;
-                }
+                if (iterator.CurrentLine != contentLine)
+                    lineStart = true;
+
+                if (lineStart && iterator.CurrentSymbol == SpecialChars.Preprocessor)
+                    return true;
+
+                lineStart = false;
+                contentLine = iterator.CurrentLine;
 
                 if (!iterator.MoveNext())
                     break;
-
-                iterator.SkipSpaces();
             }
 
             return false;
