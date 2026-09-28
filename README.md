@@ -58,8 +58,9 @@ A `#` is a directive only when it is the first non-whitespace character of a lin
 ## Verification
 
 * **Tests first.** 28 new tests in `PreprocessorTests` (14 scenarios, CRLF and LF): strings, doubled quotes, multi-line strings, comments, indentation, nested blocks, `#ИначеЕсли`/`#Иначе`, a missing `#КонецЕсли`, and active code. On the upstream code 23 of them fail. With the fix all 198 tests of `OneScript.Language.Tests` pass.
+* **Scripted tests.** `tests/preprocessor-skipped-branch.os` runs under the upstream `testrunner.os`: 14 scenarios, each compiled from a string with CRLF and with LF line endings. This fork passes 14 of 14, OneScript 2.2.0 passes 4 (every "must compile" scenario and both false-success scenarios fail), OneScript 1.9.4 passes 13: it skips `#000000` at the start of a line in an inactive branch.
 * **Control build.** The same commit without the fix was built with the same command, to separate the fix from the build environment. It behaves exactly like the official 2.2.0 in every check below.
-* **Engine regression.** The other unit test projects pass. `tests/testrunner.os -runall` (1,092 tests) gives the same result for every test as the control build.
+* **Engine regression.** The other unit test projects pass. `tests/testrunner.os -runall` gives the same result for every upstream test as the control build (1,092 tests); with the new file it runs 1,106.
 * **Real code.** 11,275 modules of a 1C:Enterprise 8.3 configuration and its archived builds were checked with `oscript -check` by both engines. The official 2.2.0 reported a false preprocessor error in 90 of them (30 distinct modules): colours like `#000000`, code templates like `"&&$##"`, query text placeholders like `#Поле`. With the fix these errors are gone, and on each of the 90 modules the result and the error line match OneScript 1.9.4. No module got worse. Check time per file did not change.
 
 `oscript -check` stops at the first error, and on 1C modules that is usually `Неизвестный символ` — the 1C global context does not exist in OneScript. A false preprocessor error is visible only when it comes first, so 90 is a lower bound.
@@ -72,6 +73,7 @@ Requires the .NET 8 SDK or newer.
 git clone https://github.com/ivanbokhan84/OneScript.git
 cd OneScript
 dotnet test src/Tests/OneScript.Language.Tests/OneScript.Language.Tests.csproj -c Release -p:Platform=AnyCPU
+cd tests && ../dist/bin/oscript testrunner.os -run preprocessor-skipped-branch.os && cd ..
 dotnet publish src/oscript/oscript.csproj -r win-x64 --self-contained -c Release -p:VersionPrefix=2.2.0 -p:VersionSuffix=fork.1 -o dist/bin
 ```
 
