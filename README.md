@@ -65,6 +65,35 @@ A `#` is a directive only when it is the first non-whitespace character of a lin
 
 `oscript -check` stops at the first error, and on 1C modules that is usually `Неизвестный символ` — the 1C global context does not exist in OneScript. A false preprocessor error is visible only when it comes first, so 90 is a lower bound.
 
+## `oscript -checkall`
+
+`-check` stops at the first error, and on 1C modules the first error is usually an unknown global name (`Справочники`, `Документы`, another common module) that OneScript does not have. The code generator checks after that point — wrong argument count for the module's own methods, a procedure used as a function, a duplicate method, labels — never run. `-check` also starts the engine once per file.
+
+This fork adds `-checkall`:
+
+```
+oscript -encoding=utf-8 -checkall <file or folder> [...]
+  <file>: Ошибка в строке: N,M / message      every error of the module
+  <file>: No errors.
+  <file>: unknown symbols: K (...)           the 1C global context, not an error
+  Files: X, with errors: Y, not checked: Z
+Exit code: 0 no errors, 1 errors, 2 a file could not be checked.
+```
+
+Folders are walked recursively for `*.bsl` and `*.os`. The engine starts once for all files, errors go to a collecting sink, and unknown symbols are listed instead of stopping the check. `-check` itself is unchanged.
+
+Measured on 29 September 2026 (short runs on one loaded machine):
+
+| | `-checkall` 2.2.0-vanteam.2 | `-check` 2.2.0 | `-check` 1.9.4 |
+|---|---|---|---|
+| 76 modules of a 1C configuration | 2.4 s, one process | 80 s | 50 s |
+| one 155 KB module | 0.61 s | 0.69 s | 0.51 s |
+| 116 real modules checked to the end | 116 | 10 | 10 |
+| code generator errors after an unknown global, of 4 | 4 | 0 | 0 |
+| syntax errors after an unknown global, of 10 | 10 | 10 | 0 |
+
+The 2.2.0-vanteam.2 build is also published with ReadyToRun, which makes plain `-check` about a third faster than the official 2.2.0 (0.48 s against 0.69 s on the same module).
+
 ## Building
 
 Requires the .NET 8 SDK or newer.
@@ -74,7 +103,7 @@ git clone https://github.com/ivanbokhan84/OneScript.git
 cd OneScript
 dotnet test src/Tests/OneScript.Language.Tests/OneScript.Language.Tests.csproj -c Release -p:Platform=AnyCPU
 cd tests && ../dist/bin/oscript testrunner.os -run preprocessor-skipped-branch.os && cd ..
-dotnet publish src/oscript/oscript.csproj -r win-x64 --self-contained -c Release -p:VersionPrefix=2.2.0 -p:VersionSuffix=fork.1 -o dist/bin
+dotnet publish src/oscript/oscript.csproj -r win-x64 --self-contained -c Release -p:VersionPrefix=2.2.0 -p:VersionSuffix=vanteam.2 -p:PublishReadyToRun=true -o dist/bin
 ```
 
 This builds `oscript` only — enough for `oscript -check`. For a full distribution, including the C++ Native API component and the standard library packages, use the upstream `Build.csproj` targets.
@@ -86,7 +115,7 @@ This builds `oscript` only — enough for `oscript -check`. For a full distribut
 
 ## License
 
-[Mozilla Public License 2.0](LICENSE), the same as upstream. Modified files keep their license headers. The engine change is a single commit on top of `v2.2.0`; the other commits in this branch touch documentation only.
+[Mozilla Public License 2.0](LICENSE), the same as upstream. Modified files keep their license headers. The engine changes are two commits on top of `v2.2.0`: the preprocessor fix and `-checkall`; the other commits add tests and documentation.
 
 ## Credits
 
