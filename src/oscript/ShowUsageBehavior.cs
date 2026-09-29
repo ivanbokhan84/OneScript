@@ -29,7 +29,9 @@ namespace oscript
             Output.WriteLine($"  {"",modeWidth}   Options:");
             Output.WriteLine($"  {"",modeWidth}     {"-cgi",subOptionWidth} Syntax check in CGI-mode.");
             Output.WriteLine($"  {"",modeWidth}     {"-env=<file>",subOptionWidth} Path to entrypoint file for context.");
-            
+            Output.WriteLine($"  {"-checkall",modeWidth} Syntax check of files and folders in one run: all errors of a module,");
+            Output.WriteLine($"  {"",modeWidth}   unknown symbols are listed but do not stop the check.");
+
             Output.WriteLine($"  {"-debug",modeWidth} Runs script in debug mode.");
             Output.WriteLine($"  {"",modeWidth}   Options:");
             Output.WriteLine($"  {"",modeWidth}     {"-port=<port>",subOptionWidth} Debugger port (default is 2801).");

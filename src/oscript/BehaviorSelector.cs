@@ -41,6 +41,7 @@ namespace oscript
             initializers.Add("-measure", MeasureBehavior.Create);
             initializers.Add("-compile", ShowCompiledBehavior.Create);
             initializers.Add("-check", CheckSyntaxBehavior.Create);
+            initializers.Add("-checkall", CheckAllBehavior.Create);
             initializers.Add("-cgi", h => new CgiBehavior());
             initializers.Add("-version", h => new ShowVersionBehavior());
             initializers.Add("-v", h => new ShowVersionBehavior());
